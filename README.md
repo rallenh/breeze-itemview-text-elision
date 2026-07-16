@@ -107,7 +107,7 @@ recommendation.
 
 ## Numeric Probe
 
-`probe/` contains standalone Qt5 and Qt6 programs that measure `SE_ItemViewItemText`
+[`probe/`](probe/) contains standalone Qt5 and Qt6 programs that measure `SE_ItemViewItemText`
 width against the full item rect at four column widths across three styles.
 
 ### Pre-built binaries
@@ -141,7 +141,7 @@ with `QT_QPA_PLATFORMTHEME=kde`) for the Breeze row to reflect actual plugin val
 ./run-clean.sh ./qt5-style-elide-test
 ```
 
-`run-clean.sh` clears all Qt/KDE style and theme environment variables before
+[`run-clean.sh`](probe/run-clean.sh) clears all Qt/KDE style and theme environment variables before
 launching, then echoes the cleared state and the installed `plasma-breeze` RPM
 version. This ensures results are driven by `kdeglobals` and the installed plugin,
 not session overrides.
@@ -166,7 +166,7 @@ Full probe output for all three test builds is in [`probe/results/`](probe/resul
 
 ## Screenshots
 
-`screenshots/` is organized by build:
+[`screenshots/`](screenshots/) is organized by build:
 
 | Directory | Build | Patch |
 |---|---|---|
