@@ -1,0 +1,45 @@
+From aba0f922b in plasma/breeze (Plasma/6.7 branch)
+Subject: [PATCH 1/2] Fix SE_ItemViewItemText: remove unconditional horizontal narrowing
+
+Commit aba0f922b ("Make viewItemPrimitive rounded like in QtQuick style",
+Akseli Lahtinen, 2026-02-25) added two lines to SE_ItemViewItemText that
+unconditionally narrow the text rect by (margins + ItemView_ItemPaddingWidth)
+on each side — 4px per side, 8px total.
+
+This discards 8px from the available text width regardless of column
+width, causing visible label elision in any list/tree view using the
+Breeze style with narrow or medium-width columns.
+
+Affected applications (confirmed via numeric probe and visual verification):
+- KeePassXC 2.7.x (Qt5, entry properties panel / sidebar)
+- SMPlayer (Qt5, Preferences sidebar when style = Breeze)
+- GoldenDict (Qt5, word list pane)
+
+The highlight rect is already inset by itemViewItemMargins (2px/side) in
+the highlight paint path. The text rect does not need to mirror that inset;
+Qt's base class already allocates space for check indicators and decorations
+via SE_ItemViewItemCheckIndicator / SE_ItemViewItemDecoration.
+
+This patch removes both horizontal-narrowing lines and keeps only the
+existing vertical adjustment (moveTop) which correctly accounts for
+asymmetric top/bottom margins in the rounded highlight geometry.
+
+Probe output before patch (Breeze, SE_ItemViewItemText vs. base rect):
+  column 80px:  diff=8   column 120px: diff=8   column 200px: diff=8
+  (Fusion/Windows: diff=0 at all widths)
+
+Probe output after patch (Breeze):
+  column 80px:  diff=0   column 120px: diff=0   column 200px: diff=0
+
+diff --git a/kstyle/breezestyle.cpp b/kstyle/breezestyle.cpp
+--- a/kstyle/breezestyle.cpp
++++ b/kstyle/breezestyle.cpp
+@@ -1062,8 +1062,8 @@ QRect Style::subElementRect(SubElement element, const QStyleOption *option, cons
+         QRect rect = ParentStyleClass::subElementRect(element, option, widget);
+         if (viewItem) {
+             const QMargins margins = _helper->itemViewItemMargins(viewItem);
+-            rect.setRight(rect.right() - margins.right() - Metrics::ItemView_ItemPaddingWidth);
+-            rect.setLeft(rect.left() + margins.left() + Metrics::ItemView_ItemPaddingWidth);
+             rect.moveTop(rect.top() + margins.top() - margins.bottom());
+         }
+

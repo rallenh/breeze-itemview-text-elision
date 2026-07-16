@@ -1,0 +1,39 @@
+From aba0f922b in plasma/breeze (Plasma/6.7 branch)
+Subject: [PATCH 2/2] Fix SE_ItemViewItemText: remove ItemView_ItemPaddingWidth, keep edge margins
+
+Alternative to patch 0001. Preserves the 2px visual inset from
+itemViewItemMargins (aligning text with the inner edge of the rounded
+highlight) while removing the additional ItemView_ItemPaddingWidth (2px/side)
+that was discarding 4px total from the text width.
+
+Metrics at Plasma/6.7.3:
+  ItemView_ItemMarginLeft  = 2px  (part of itemViewItemMargins)
+  ItemView_ItemMarginRight = 2px  (part of itemViewItemMargins)
+  ItemView_ItemPaddingWidth = 2px (the removed term)
+
+Net effect vs. patch 0001:
+  Patch 0001 removes ALL horizontal narrowing: text rect = full cell width
+  Patch 0002 removes only ItemPaddingWidth: text rect = cell width - 4px total
+
+Whether 4px remaining narrowing still triggers elision in real narrow columns
+is subject to testing. Patch 0001 is the conservative fix; this patch is
+presented as the alternative that preserves some of the original commit's
+visual intent (text does not overlap the rounded corner edge margin).
+
+diff --git a/kstyle/breezestyle.cpp b/kstyle/breezestyle.cpp
+--- a/kstyle/breezestyle.cpp
++++ b/kstyle/breezestyle.cpp
+@@ -1062,8 +1062,10 @@ QRect Style::subElementRect(SubElement element, const QStyleOption *option, cons
+         QRect rect = ParentStyleClass::subElementRect(element, option, widget);
+         if (viewItem) {
+             const QMargins margins = _helper->itemViewItemMargins(viewItem);
+-            rect.setRight(rect.right() - margins.right() - Metrics::ItemView_ItemPaddingWidth);
+-            rect.setLeft(rect.left() + margins.left() + Metrics::ItemView_ItemPaddingWidth);
++            // Retain only the 2px edge inset from itemViewItemMargins; the additional
++            // ItemView_ItemPaddingWidth (2px/side) is removed to prevent text elision
++            // in narrow columns.
++            rect.setRight(rect.right() - margins.right());
++            rect.setLeft(rect.left() + margins.left());
+             rect.moveTop(rect.top() + margins.top() - margins.bottom());
+         }
+

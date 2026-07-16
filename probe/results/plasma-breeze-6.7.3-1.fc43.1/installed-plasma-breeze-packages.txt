@@ -1,0 +1,4 @@
+plasma-breeze-6.7.3-1.fc43.1.x86_64
+plasma-breeze-common-6.7.3-1.fc43.1.noarch
+plasma-breeze-qt5-6.7.3-1.fc43.1.x86_64
+plasma-breeze-qt6-6.7.3-1.fc43.1.x86_64

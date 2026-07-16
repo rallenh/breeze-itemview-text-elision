@@ -1,0 +1,43 @@
+Qt version: 5.15.18
+Available styles: Breeze kvantum-dark kvantum qt5ct-style Windows Fusion 
+Active style: breeze
+
+=== CT_ItemViewItem size inflation probe (Qt5) ===
+widthAdded = hintSize.width - contentWidth  (positive = pixels added beyond content)
+These extra pixels are NOT available for text, causing elision in narrow columns.
+
+[breeze        ]  contentWidth=150  hintSize=202x24  widthAdded=52  heightAdded=4
+[Fusion        ]  contentWidth=150  hintSize=194x18  widthAdded=44  heightAdded=-2
+[Windows       ]  contentWidth=150  hintSize=194x18  widthAdded=44  heightAdded=-2
+
+[breeze        ]  contentWidth=120  hintSize=202x24  widthAdded=82  heightAdded=4
+[Fusion        ]  contentWidth=120  hintSize=194x18  widthAdded=74  heightAdded=-2
+[Windows       ]  contentWidth=120  hintSize=194x18  widthAdded=74  heightAdded=-2
+
+[breeze        ]  contentWidth=100  hintSize=202x24  widthAdded=102  heightAdded=4
+[Fusion        ]  contentWidth=100  hintSize=194x18  widthAdded=94  heightAdded=-2
+[Windows       ]  contentWidth=100  hintSize=194x18  widthAdded=94  heightAdded=-2
+
+[breeze        ]  contentWidth= 80  hintSize=202x24  widthAdded=122  heightAdded=4
+[Fusion        ]  contentWidth= 80  hintSize=194x18  widthAdded=114  heightAdded=-2
+[Windows       ]  contentWidth= 80  hintSize=194x18  widthAdded=114  heightAdded=-2
+
+=== SE_ItemViewItemText rect probe (Qt5, for comparison with Qt6) ===
+diff = itemWidth - textRect.width()  (positive = pixels stolen from text rect)
+
+[breeze        ]  itemWidth=150  textRect=(2,3 146x18)  textWidth=146  diff=4
+[Fusion        ]  itemWidth=150  textRect=(0,3 150x18)  textWidth=150  diff=0
+[Windows       ]  itemWidth=150  textRect=(0,3 150x18)  textWidth=150  diff=0
+
+[breeze        ]  itemWidth=120  textRect=(2,3 116x18)  textWidth=116  diff=4
+[Fusion        ]  itemWidth=120  textRect=(0,3 120x18)  textWidth=120  diff=0
+[Windows       ]  itemWidth=120  textRect=(0,3 120x18)  textWidth=120  diff=0
+
+[breeze        ]  itemWidth=100  textRect=(2,3 96x18)  textWidth= 96  diff=4
+[Fusion        ]  itemWidth=100  textRect=(0,3 100x18)  textWidth=100  diff=0
+[Windows       ]  itemWidth=100  textRect=(0,3 100x18)  textWidth=100  diff=0
+
+[breeze        ]  itemWidth= 80  textRect=(2,3 76x18)  textWidth= 76  diff=4
+[Fusion        ]  itemWidth= 80  textRect=(0,3 80x18)  textWidth= 80  diff=0
+[Windows       ]  itemWidth= 80  textRect=(0,3 80x18)  textWidth= 80  diff=0
+
