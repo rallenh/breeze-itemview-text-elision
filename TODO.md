@@ -26,8 +26,8 @@
 ## KDE
 
 - [x] Draft bugs.kde.org ticket → kde-bugreport-draft.md
-- [ ] Verify Allen has a KDE Identity account (identity.kde.org) — needed for bugs.kde.org + invent.kde.org
-- [ ] Allen files bugs.kde.org ticket, notes the bug ID
+- [x] Verify Allen has a KDE Identity account (identity.kde.org) — needed for bugs.kde.org + invent.kde.org
+- [x] Allen files bugs.kde.org ticket, notes the bug ID
 - [ ] Draft invent.kde.org MR against plasma/breeze Plasma/6.7 branch (Patch 1)
 - [ ] Allen opens MR, references bug ID in description
 - [ ] Cross-link: update bug ticket with MR URL
