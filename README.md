@@ -11,6 +11,8 @@ medium-width columns will elide labels that would otherwise fit.
 
 **Fix**: remove the two horizontal-narrowing lines. See [`patches/`](patches/).
 
+**KDE Bug Report**: https://bugs.kde.org/show_bug.cgi?id=523118
+
 ---
 
 ## Affected Versions
