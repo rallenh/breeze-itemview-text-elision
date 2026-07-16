@@ -13,6 +13,8 @@ medium-width columns will elide labels that would otherwise fit.
 
 **KDE Bug Report**: https://bugs.kde.org/show_bug.cgi?id=523118
 
+**KDE Merge Request**: https://invent.kde.org/plasma/breeze/-/merge_requests/627
+
 ---
 
 ## Affected Versions
