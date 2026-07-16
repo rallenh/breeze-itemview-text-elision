@@ -21,16 +21,16 @@
 - [x] README.md
 - [x] screenshots/ populated: 01-stock-*, 02-patch1-*, 03-patch2-* (3 apps × 3 builds)
 - [x] Screenshots reviewed for public audience (no sensitive data, no personal info)
-- [ ] Allen: git init, add remote, push to github.com
+- [x] Allen: git init, add remote, push to github.com
 
 ## KDE
 
 - [x] Draft bugs.kde.org ticket → kde-bugreport-draft.md
 - [x] Verify Allen has a KDE Identity account (identity.kde.org) — needed for bugs.kde.org + invent.kde.org
 - [x] Allen files bugs.kde.org ticket, notes the bug ID
-- [ ] Draft invent.kde.org MR against plasma/breeze Plasma/6.7 branch (Patch 1)
-- [ ] Allen opens MR, references bug ID in description
-- [ ] Cross-link: update bug ticket with MR URL
+- [x] Draft invent.kde.org MR against plasma/breeze Plasma/6.7 branch (Patch 1)
+- [x] Allen opens MR, references bug ID in description — https://invent.kde.org/plasma/breeze/-/merge_requests/627
+- [x] Cross-link: update bug ticket with MR URL (automatic via bug-janitor bot, no manual comment needed)
 
 ## Fedora follow-up
 
