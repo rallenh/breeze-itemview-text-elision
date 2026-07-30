@@ -1,11 +1,37 @@
 # KeePassXC Qt6 Port: SE_ItemViewItemText Exposure Analysis
 
+*Part of the evidence set for KDE bug [523118](https://bugs.kde.org/show_bug.cgi?id=523118) — see the [repository overview](../README.md) for the full set.*
+
+> **Verification note**: the call chain documented below was verified against
+> `CategoryListWidget.cpp` as shipped in the pristine
+> `keepassxc-2.7.12-src.tar.xz` tarball — the same source compiled into
+> `keepassxc-2.7.12-1.fc43.x86_64`, the unpatched build that produced this
+> repo's screenshots. It matches exactly: `opt.icon` is cleared and redrawn
+> manually, while `opt.text` is left untouched and painted entirely inside
+> `drawControl(CE_ItemViewItem)`.
+>
+> **If you re-derive this analysis, read from unmodified upstream source.**
+> An app-side change to KeePassXC's own text painting — blanking `opt.text`
+> and drawing the label directly with `QPainter::drawText()` — was tried
+> early in this investigation and decided against, on the grounds that the
+> defect is in the style and the fix belongs there. Nothing in this repository
+> depends on that attempt, and the screenshots here were taken against the
+> unpatched release build. The point of the caution is only that a modified
+> `CategoryListWidget.cpp` will not reproduce the call chain described below.
+
 ## Summary
 
 KeePassXC's in-development Qt6 port (`feature/qt-feature` branch, targeting 2.8.x)
 will be affected by the same `SE_ItemViewItemText` text rect narrowing bug as the
-current Qt5 release. The affected widget — `CategoryListWidget` — is structurally
-identical between the Qt5 and Qt6 codebases. The delegate's `paint()` method routes
+current Qt5 release. The affected widget — `CategoryListWidget` — is **byte-identical**
+between the mainline and Qt6-port branches, which anyone can confirm in one command:
+
+```
+$ git diff origin/develop origin/feature/qt-feature -- src/gui/CategoryListWidget.cpp
+$            # no output — the file is unchanged between the two branches
+```
+
+The delegate's `paint()` method routes
 text rendering through the style system, landing on `breeze6.so`'s
 `subElementRect(SE_ItemViewItemText)` on a KDE session. Unless the bug in
 `plasma-breeze` is fixed before the 2.8.x release, users will see the same elision
@@ -24,9 +50,11 @@ It is implemented as a `QWidget` housing a `QListWidget` with a custom item
 delegate, `CategoryListWidgetDelegate` (defined inline in the same file), which
 inherits `QStyledItemDelegate`.
 
-The same class exists in both the current Qt5 codebase (2.7.x) and the Qt6 port
-(`feature/qt-feature`, min Qt version 6.2.4, no Qt5 fallback). No structural
-changes relevant to style-system delegation were found between branches.
+The same class exists in both the mainline codebase and the Qt6 port
+(`feature/qt-feature`, min Qt version 6.2.4, no Qt5 fallback). The file is not
+merely similar between the two branches — it is unchanged, per the `git diff`
+above. Whatever differences the Qt6 port introduces elsewhere, this widget's
+delegation to the style system is not among them.
 
 ---
 
@@ -150,8 +178,8 @@ load `breeze6.so` (not `breeze5.so`) on a KDE session. `breeze6.so` is compiled
 from the same `kstyle/breezestyle.cpp` as `breeze5.so` and carries the identical
 `SE_ItemViewItemText` narrowing.
 
-`CategoryListWidget` itself is unchanged between branches in any way that would
-affect this analysis.
+`CategoryListWidget` itself is unchanged between branches — literally, not just
+in effect (see the `git diff` in the Summary).
 
 ---
 

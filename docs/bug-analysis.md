@@ -1,5 +1,7 @@
 # Bug Analysis: SE_ItemViewItemText Elision in KDE Breeze Style
 
+*Part of the evidence set for KDE bug [523118](https://bugs.kde.org/show_bug.cgi?id=523118) — see the [repository overview](../README.md) for the full set.*
+
 ## Summary
 
 A commit to `plasma/breeze` in February 2026 introduced an unconditional

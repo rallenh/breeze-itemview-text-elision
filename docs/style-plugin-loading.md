@@ -1,5 +1,7 @@
 # How Qt5 Applications Load breeze5.so
 
+*Part of the evidence set for KDE bug [523118](https://bugs.kde.org/show_bug.cgi?id=523118) — see the [repository overview](../README.md) for the full set.*
+
 ## The Chain
 
 Qt5 applications using Breeze do not link against `breeze5.so` directly.

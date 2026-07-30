@@ -33,7 +33,45 @@ medium-width columns will elide labels that would otherwise fit.
 
 SMPlayer defaults to the Fusion style and is not affected under default
 configuration; elision appears when the user changes Preferences → General → Style
-to Breeze.
+to Breeze. Source-level trace: [`docs/smplayer-source-analysis.md`](docs/smplayer-source-analysis.md)
+— the Preferences sidebar has no custom item delegate at all, so it is the
+most directly exposed of the three tested applications.
+
+## This Is a Qt API Defect, Not a KDE-Application Defect
+
+`SE_ItemViewItemText` is a Qt Widgets API (`QStyle::SubElement`), not a KDE
+Frameworks primitive. Every mechanism that exposes the bug to an application
+is stock Qt:
+
+- `QStyleFactory` — the plugin loader that turns `widgetStyle=Breeze` in
+  `kdeglobals` into a loaded `breeze5.so`/`breeze6.so` — is Qt Widgets, not
+  KDE Frameworks. See [`style-plugin-loading.md`](docs/style-plugin-loading.md).
+- `QProxyStyle`, used by both KeePassXC (`IconSelectionCorrectedStyle`) and
+  SMPlayer (`MyProxyStyle`) to layer small per-app tweaks over the active
+  style, is stock Qt Widgets.
+- `QCommonStyle::drawControl(CE_ItemViewItem)`, which calls
+  `subElementRect(SE_ItemViewItemText)` internally, is Qt's own
+  cross-platform item-view painting implementation — the same one Fusion and
+  Windows inherit from.
+
+Neither KeePassXC nor SMPlayer is a KDE application (neither links
+`KF6::*`), and neither contains KDE-specific code anywhere in its item-view
+paint path — see [`sequence-diagrams.md`](docs/sequence-diagrams.md),
+[`keepassxc-qt6-analysis.md`](docs/keepassxc-qt6-analysis.md), and
+[`smplayer-source-analysis.md`](docs/smplayer-source-analysis.md) for
+source-level traces of both. GoldenDict is likewise a plain Qt Widgets
+application. All three exhibit the bug purely because they are Qt
+applications running under a KDE session with Breeze as the active
+`QStyle` — the same exposure any Qt application would have, KDE-linked
+or not.
+
+The bug itself lives entirely inside `plasma-breeze`
+(`kstyle/breezestyle.cpp`), which is KDE code — but the *mechanism* by
+which it reaches unrelated applications is Qt's platform-style plugin
+system working exactly as designed. See
+[`se-itemviewitemtext-proof.md`](docs/se-itemviewitemtext-proof.md) for a
+proof that isolates the defect to that one function, independent of any
+application.
 
 ## Qt6 Scope
 
@@ -112,11 +150,27 @@ recommendation.
 [`probe/`](probe/) contains standalone Qt5 and Qt6 programs that measure `SE_ItemViewItemText`
 width against the full item rect at four column widths across three styles.
 
+A hardened `-v2` variant of each (using a real, populated `QListWidget` instead
+of a bare `QWidget`, plus an icon+selected variant) exists as a corroborating
+cross-check — not a replacement — for the original probes; see
+[`docs/se-itemviewitemtext-proof.md`](docs/se-itemviewitemtext-proof.md#6-hardened-cross-check-probe-v2).
+Build with `make v2`.
+
 ### Pre-built binaries
 
-[`probe/qt5-style-elide-test`](probe/qt5-style-elide-test) and [`probe/qt-style-elide-test`](probe/qt-style-elide-test) are committed as
-pre-built x86_64 binaries, compiled on Fedora 43 Workstation x86_64 (fully updated
-as of 2026-07-15, Qt 5.15.18 / Qt 6.x). They can be run directly without building.
+All four probes are committed as pre-built x86_64 binaries so they can be run
+directly, without installing Qt development or private headers:
+
+| Binary | Built | Toolchain |
+|---|---|---|
+| [`probe/qt5-style-elide-test`](probe/qt5-style-elide-test) | 2026-07-15 | Fedora 43 x86_64, Qt 5.15.18 |
+| [`probe/qt-style-elide-test`](probe/qt-style-elide-test) | 2026-07-15 | Fedora 43 x86_64, Qt 6.x |
+| [`probe/qt5-style-elide-test-v2`](probe/qt5-style-elide-test-v2) | 2026-07-29 | Fedora 43 x86_64, Qt 5.15.18 |
+| [`probe/qt-style-elide-test-v2`](probe/qt-style-elide-test-v2) | 2026-07-29 | Fedora 43 x86_64, Qt 6.10.3 |
+
+Each probe prints the Qt version and the active style name it resolved before
+reporting any measurements, so you can confirm what your run actually exercised
+rather than relying on the table above.
 
 ### Build
 
@@ -189,7 +243,10 @@ Each directory contains `keepassxc.png`, `smplayer-1.png`, `smplayer-2.png`, and
 |---|---|
 | [`docs/bug-analysis.md`](docs/bug-analysis.md) | Source commit, metric values, numeric proof, per-app test results, both patches, secondary `CT_ItemViewItem` finding |
 | [`docs/style-plugin-loading.md`](docs/style-plugin-loading.md) | How Qt5 apps load `breeze5.so` via `QStyleFactory`; why KDE-linked apps are equally affected; per-app style selection behavior |
-| [`docs/keepassxc-qt6-analysis.md`](docs/keepassxc-qt6-analysis.md) | Code path analysis of KeePassXC's Qt6 port; confirms 2.8.x will be affected unless the upstream bug is fixed first |
+| [`docs/keepassxc-qt6-analysis.md`](docs/keepassxc-qt6-analysis.md) | Source-level call-chain trace for KeePassXC (both the current Qt5 release and the in-development Qt6 port); confirms 2.8.x will be affected unless the upstream bug is fixed first |
+| [`docs/smplayer-source-analysis.md`](docs/smplayer-source-analysis.md) | Source-level call-chain trace for SMPlayer's Preferences sidebar — no custom delegate at all, the most direct exposure of the three tested apps |
+| [`docs/sequence-diagrams.md`](docs/sequence-diagrams.md) | Mermaid sequence diagrams for KeePassXC and SMPlayer, from `paint()` down to `Style::subElementRect(SE_ItemViewItemText)` |
+| [`docs/se-itemviewitemtext-proof.md`](docs/se-itemviewitemtext-proof.md) | Formal proof isolating the defect to `subElementRect(SE_ItemViewItemText)` itself, independent of any application |
 
 ---
 
@@ -197,4 +254,5 @@ Each directory contains `keepassxc.png`, `smplayer-1.png`, `smplayer-2.png`, and
 
 - Fedora 43 (x86_64), KDE Plasma 6.7.3, Qt 5.15.18
 - `plasma-breeze` builds tested: 6.7.3-1.fc43.1 (stock), 6.7.3-1.fc43.2 (Patch 1), 6.7.3-1.fc43.3 (Patch 2)
+- [`probe/reset-app-profile.sh`](probe/reset-app-profile.sh) resets a test application's own saved settings, so a capture reflects known geometry rather than an accumulated session — it deliberately leaves `kdeglobals` alone, since that is what selects the style under test
 - All applications launched via [`probe/run-clean.sh`](probe/run-clean.sh) to document session context and exclude environment-variable interference

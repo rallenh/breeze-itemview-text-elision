@@ -2,7 +2,7 @@ From aba0f922b in plasma/breeze (Plasma/6.7 branch)
 Subject: [PATCH 1/2] Fix SE_ItemViewItemText: remove unconditional horizontal narrowing
 
 Commit aba0f922b ("Make viewItemPrimitive rounded like in QtQuick style",
-Akseli Lahtinen, 2026-02-25) added two lines to SE_ItemViewItemText that
+2026-02-25) added two lines to SE_ItemViewItemText that
 unconditionally narrow the text rect by (margins + ItemView_ItemPaddingWidth)
 on each side — 4px per side, 8px total.
 
