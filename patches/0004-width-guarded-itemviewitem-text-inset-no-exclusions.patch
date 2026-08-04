@@ -1,0 +1,111 @@
+From aba0f922b in plasma/breeze (Plasma/6.7 branch)
+Subject: [PATCH 4] SE_ItemViewItemText: take the horizontal inset only from
+ space the text does not need, in every case
+
+Supersedes patch 0003, which is retained because it was measured and its
+regression is part of the record. 0003 carried two exclusions — word-wrapped
+text and Qt::ElideNone — for which it kept the full inset. Both turned out to be
+the worse trade, for the same reason: in both cases the text still loses those
+pixels, it is merely lost by a different mechanism.
+
+What 0003 cost, measured
+------------------------
+KeePassXC's entry-editor sidebar (`CategoryListWidget`) is a QListView in
+IconMode with wordWrap enabled (`CategoryListWidget.ui`, viewMode and wordWrap
+properties). QAbstractItemView::viewOptions() therefore sets
+QStyleOptionViewItem::WrapText, 0003's exclusion fired, the full inset was kept,
+and every label in a 96px sidebar was elided:
+
+  text          adv  natural  textW  inset  drawn   result
+  Entry          32       38     32      6     26   elided to "En..."
+  Icon           26       32     26      6     20   elided to "I..."
+  Auto-Type      61       67     61      6     55   elided to "Auto-..."
+
+Patch 0001 does not elide these, because it removes the inset unconditionally.
+0003 was therefore a regression against 0001 in this layout — it fixed less than
+0001 did. Fusion renders the same sidebar in full, confirming the style is the
+variable.
+
+This patch removes both exclusions. With the guard applied unconditionally the
+same sidebar gives inset=0, drawn=32 for "Entry" against an advance of 32, and
+the label fits.
+
+Why removing them is the better trade
+-------------------------------------
+For word-wrapped text, horizontalAdvance() of the whole string is an
+overestimate: the text may occupy several shorter lines. The guard therefore
+releases more of the inset than strictly necessary. The cost is clearance that
+was not needed rather than a character, because the amount released is bounded
+by the inset and is only released when the string does not fit on one line.
+
+For Qt::ElideNone the text is clipped rather than elided, but it is lost either
+way, so preserving clearance at its expense is the worse trade.
+
+Across the tested matrix this patch is never worse than 0001, while still
+preserving the inset wherever the item has width to spare.
+
+Applies to Qt5 and Qt6 alike; no version conditional is introduced.
+
+Scope of the claim
+------------------
+The guard is a heuristic validated against the measured matrix, not a proof of
+general correctness. It uses QFontMetrics::horizontalAdvance() as its estimate
+of the width the string needs, while Qt lays the string out through QTextLayout.
+Where the advance overestimates — wrapped and multi-line text, and shaping that
+narrows a run — the guard releases more of the inset than required, costing
+clearance and nothing else. Were it to underestimate, the guard would retain
+more of the inset than the string can spare, and the result would be worse than
+0001 rather than better. No such case appeared in the 3888 configurations
+measured, but that matrix does not cover tree or table views, SelectRows
+selection behaviour, RTL layouts, explicit line breaks, complex shaping, or
+non-default fonts and display scaling.
+
+This is the trade the patch makes deliberately: it keeps the clearance
+aba0f922b was added to provide, at the cost of depending on a width estimate.
+Patches 0001-0003 are hypothesis tests retained as the experimental record, not
+alternatives being proposed; 0004 is the proposed change.
+
+--- a/kstyle/breezestyle.cpp
++++ b/kstyle/breezestyle.cpp
+@@ -1062,8 +1062,39 @@
+         QRect rect = ParentStyleClass::subElementRect(element, option, widget);
+         if (viewItem) {
+             const QMargins margins = _helper->itemViewItemMargins(viewItem);
+-            rect.setRight(rect.right() - margins.right() - Metrics::ItemView_ItemPaddingWidth);
+-            rect.setLeft(rect.left() + margins.left() + Metrics::ItemView_ItemPaddingWidth);
++            const int leftInset = margins.left() + Metrics::ItemView_ItemPaddingWidth;
++            const int rightInset = margins.right() + Metrics::ItemView_ItemPaddingWidth;
++
++            // Take the inset only out of space the text does not need. Where the
++            // item is wide enough to spare it, the full inset is applied exactly
++            // as before; where it is not, the text keeps the width it needs
++            // rather than being elided by the inset itself.
++            //
++            // The comparison is made against the width the text is really laid
++            // out in, not against rect.width(): QCommonStylePrivate::
++            // viewItemDrawText() removes PM_FocusFrameHMargin + 1 from each side
++            // again, after this function has returned.
++            //
++            // No case is excluded, deliberately. For word-wrapped text
++            // horizontalAdvance() of the whole string overestimates what is
++            // required, so the guard releases more of the inset than strictly
++            // necessary; that costs clearance which was not needed rather than
++            // a character. Excluding wrapped text and keeping the full inset
++            // instead elides labels in icon-mode views, KeePassXC's entry
++            // editor sidebar among them. The same reasoning applies to
++            // Qt::ElideNone, where the text is clipped rather than elided but
++            // is lost either way.
++            const int textMargin = proxy()->pixelMetric(PM_FocusFrameHMargin, option, widget) + 1;
++            const int available = rect.width() - 2 * textMargin;
++            const int required = viewItem->fontMetrics.horizontalAdvance(viewItem->text);
++            const int inset = qBound(0, available - required, leftInset + rightInset);
++
++            // Split what remains in the original proportion, so a reduced inset
++            // keeps the text positioned as it would have been.
++            const int total = leftInset + rightInset;
++            const int right = total > 0 ? inset * rightInset / total : 0;
++            rect.setRight(rect.right() - right);
++            rect.setLeft(rect.left() + (inset - right));
+             rect.moveTop(rect.top() + margins.top() - margins.bottom());
+         }
+ 

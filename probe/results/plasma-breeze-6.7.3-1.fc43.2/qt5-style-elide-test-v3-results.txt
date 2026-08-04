@@ -1,0 +1,132 @@
+========================================================
+  Qt/Breeze clean-launch wrapper
+  2026-08-01 00:54:54
+========================================================
+
+  Binary       : /home/allen/Workspace/breeze-itemview-text-elision/probe/qt5-style-elide-test-v3
+  plasma-breeze: plasma-breeze-6.7.3-1.fc43.2.x86_64
+  breeze-qt5   : plasma-breeze-qt5-6.7.3-1.fc43.2.x86_64
+  breeze-qt6   : plasma-breeze-qt6-6.7.3-1.fc43.2.x86_64
+
+--- style / theme / platform vars (clearing) ---
+  KDEDIRS                                    was: /usr  → unset
+  QT_SCALE_FACTOR                            was: 1  → unset
+  QT_ENABLE_HIGHDPI_SCALING                  was: 0  → unset
+  GTK2_RC_FILES                              was: /home/allen/.gtkrc-2.0-kde4  → unset
+
+--- session context (kept as-is) ---
+  QT_QPA_PLATFORMTHEME                       (unset)
+  XDG_CURRENT_DESKTOP                        KDE
+  KDE_FULL_SESSION                           true
+  KDE_SESSION_VERSION                        6
+  DISPLAY                                    :0
+  WAYLAND_DISPLAY                            (unset)
+  XAUTHORITY                                 /tmp/xauth_scwqpu
+  XDG_CONFIG_HOME                            (unset)
+  XDG_DATA_HOME                              (unset)
+
+--- exec: /home/allen/Workspace/breeze-itemview-text-elision/probe/qt5-style-elide-test-v3  ---
+
+Qt version: 5.15.18
+Active style: breeze
+
+=== SE_ItemViewItemText rect probe v3 (Qt5, slack-aware width sweep) ===
+advance = fontMetrics.horizontalAdvance(text)  width of the glyphs themselves
+tMargin = pixelMetric(PM_FocusFrameHMargin) + 1  per-side padding QCommonStyle reserves
+natural = advance + 2*tMargin                 what QCommonStyle allocates to the text
+drawn   = textWidth - 2*tMargin               viewItemDrawText() removes tMargin from
+                                              each side again before eliding, so this,
+                                              not textWidth, is the layout width
+slack   = drawn - advance                     negative = cannot fit; delegate elides
+elides  = elidedText(text, ElideRight, drawn) != text
+diff    = itemWidth - textWidth               NOTE: regime-dependent. Where the Qt5
+                                              clamp caps textWidth at `natural`, diff
+                                              grows with itemWidth and does NOT mean
+                                              'pixels taken by the style'. The sound
+                                              cross-style measure is breeze vs Fusion
+                                              textWidth at the same itemWidth.
+
+[breeze        ] baseline          itemWidth=400  textRect=(0,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=206
+[breeze        ] icon+selected     itemWidth=400  textRect=(28,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=206
+[Fusion        ] baseline          itemWidth=400  textRect=(0,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=206
+[Fusion        ] icon+selected     itemWidth=400  textRect=(28,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=206
+[Windows       ] baseline          itemWidth=400  textRect=(0,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=206
+[Windows       ] icon+selected     itemWidth=400  textRect=(28,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=206
+
+[breeze        ] baseline          itemWidth=300  textRect=(0,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=106
+[breeze        ] icon+selected     itemWidth=300  textRect=(28,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=106
+[Fusion        ] baseline          itemWidth=300  textRect=(0,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=106
+[Fusion        ] icon+selected     itemWidth=300  textRect=(28,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=106
+[Windows       ] baseline          itemWidth=300  textRect=(0,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=106
+[Windows       ] icon+selected     itemWidth=300  textRect=(28,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=106
+
+[breeze        ] baseline          itemWidth=220  textRect=(0,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=26
+[breeze        ] icon+selected     itemWidth=220  textRect=(28,3 192x18)  textWidth=192  advance=188  tMargin=3  natural=194  drawn= 186  slack=  -2  elides=YES  diff=28
+[Fusion        ] baseline          itemWidth=220  textRect=(0,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=26
+[Fusion        ] icon+selected     itemWidth=220  textRect=(28,3 192x18)  textWidth=192  advance=188  tMargin=3  natural=194  drawn= 186  slack=  -2  elides=YES  diff=28
+[Windows       ] baseline          itemWidth=220  textRect=(0,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=26
+[Windows       ] icon+selected     itemWidth=220  textRect=(28,3 192x18)  textWidth=192  advance=188  tMargin=3  natural=194  drawn= 186  slack=  -2  elides=YES  diff=28
+
+[breeze        ] baseline          itemWidth=150  textRect=(0,3 150x18)  textWidth=150  advance=188  tMargin=3  natural=194  drawn= 144  slack= -44  elides=YES  diff=0
+[breeze        ] icon+selected     itemWidth=150  textRect=(28,3 122x18)  textWidth=122  advance=188  tMargin=3  natural=194  drawn= 116  slack= -72  elides=YES  diff=28
+[Fusion        ] baseline          itemWidth=150  textRect=(0,3 150x18)  textWidth=150  advance=188  tMargin=3  natural=194  drawn= 144  slack= -44  elides=YES  diff=0
+[Fusion        ] icon+selected     itemWidth=150  textRect=(28,3 122x18)  textWidth=122  advance=188  tMargin=3  natural=194  drawn= 116  slack= -72  elides=YES  diff=28
+[Windows       ] baseline          itemWidth=150  textRect=(0,3 150x18)  textWidth=150  advance=188  tMargin=3  natural=194  drawn= 144  slack= -44  elides=YES  diff=0
+[Windows       ] icon+selected     itemWidth=150  textRect=(28,3 122x18)  textWidth=122  advance=188  tMargin=3  natural=194  drawn= 116  slack= -72  elides=YES  diff=28
+
+[breeze        ] baseline          itemWidth=120  textRect=(0,3 120x18)  textWidth=120  advance=188  tMargin=3  natural=194  drawn= 114  slack= -74  elides=YES  diff=0
+[breeze        ] icon+selected     itemWidth=120  textRect=(28,3 92x18)  textWidth= 92  advance=188  tMargin=3  natural=194  drawn=  86  slack=-102  elides=YES  diff=28
+[Fusion        ] baseline          itemWidth=120  textRect=(0,3 120x18)  textWidth=120  advance=188  tMargin=3  natural=194  drawn= 114  slack= -74  elides=YES  diff=0
+[Fusion        ] icon+selected     itemWidth=120  textRect=(28,3 92x18)  textWidth= 92  advance=188  tMargin=3  natural=194  drawn=  86  slack=-102  elides=YES  diff=28
+[Windows       ] baseline          itemWidth=120  textRect=(0,3 120x18)  textWidth=120  advance=188  tMargin=3  natural=194  drawn= 114  slack= -74  elides=YES  diff=0
+[Windows       ] icon+selected     itemWidth=120  textRect=(28,3 92x18)  textWidth= 92  advance=188  tMargin=3  natural=194  drawn=  86  slack=-102  elides=YES  diff=28
+
+[breeze        ] baseline          itemWidth=100  textRect=(0,3 100x18)  textWidth=100  advance=188  tMargin=3  natural=194  drawn=  94  slack= -94  elides=YES  diff=0
+[breeze        ] icon+selected     itemWidth=100  textRect=(28,3 72x18)  textWidth= 72  advance=188  tMargin=3  natural=194  drawn=  66  slack=-122  elides=YES  diff=28
+[Fusion        ] baseline          itemWidth=100  textRect=(0,3 100x18)  textWidth=100  advance=188  tMargin=3  natural=194  drawn=  94  slack= -94  elides=YES  diff=0
+[Fusion        ] icon+selected     itemWidth=100  textRect=(28,3 72x18)  textWidth= 72  advance=188  tMargin=3  natural=194  drawn=  66  slack=-122  elides=YES  diff=28
+[Windows       ] baseline          itemWidth=100  textRect=(0,3 100x18)  textWidth=100  advance=188  tMargin=3  natural=194  drawn=  94  slack= -94  elides=YES  diff=0
+[Windows       ] icon+selected     itemWidth=100  textRect=(28,3 72x18)  textWidth= 72  advance=188  tMargin=3  natural=194  drawn=  66  slack=-122  elides=YES  diff=28
+
+[breeze        ] baseline          itemWidth= 80  textRect=(0,3 80x18)  textWidth= 80  advance=188  tMargin=3  natural=194  drawn=  74  slack=-114  elides=YES  diff=0
+[breeze        ] icon+selected     itemWidth= 80  textRect=(28,3 52x18)  textWidth= 52  advance=188  tMargin=3  natural=194  drawn=  46  slack=-142  elides=YES  diff=28
+[Fusion        ] baseline          itemWidth= 80  textRect=(0,3 80x18)  textWidth= 80  advance=188  tMargin=3  natural=194  drawn=  74  slack=-114  elides=YES  diff=0
+[Fusion        ] icon+selected     itemWidth= 80  textRect=(28,3 52x18)  textWidth= 52  advance=188  tMargin=3  natural=194  drawn=  46  slack=-142  elides=YES  diff=28
+[Windows       ] baseline          itemWidth= 80  textRect=(0,3 80x18)  textWidth= 80  advance=188  tMargin=3  natural=194  drawn=  74  slack=-114  elides=YES  diff=0
+[Windows       ] icon+selected     itemWidth= 80  textRect=(28,3 52x18)  textWidth= 52  advance=188  tMargin=3  natural=194  drawn=  46  slack=-142  elides=YES  diff=28
+
+=== opt.widget fidelity: what leaving QStyleOptionViewItem::widget null costs ===
+QStyleOption::initFrom() does not assign QStyleOptionViewItem::widget. Breeze reads
+option->widget in Helper::itemViewItemMargins() to detect a QFrame::StyledPanel and,
+when it finds one, reduces the left/right margins by 1 each (breezehelper.cpp:1777-1780,
+"Breeze frame has one extra white pixel"). Every real item view has that frame.
+
+v1 and v2 leave opt.widget null and therefore measure the UNFRAMED case. The rows
+above set it, and so measure what a real framed QListWidget receives. This section
+shows both, so the difference between this probe and v1/v2 is documented rather than
+looking like an inconsistency.
+
+[breeze        ] baseline/noWidget itemWidth=400  textRect=(0,4 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=206
+[breeze        ] baseline          itemWidth=400  textRect=(0,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=206
+[Fusion        ] baseline/noWidget itemWidth=400  textRect=(0,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=206
+[Fusion        ] baseline          itemWidth=400  textRect=(0,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=206
+[Windows       ] baseline/noWidget itemWidth=400  textRect=(0,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=206
+[Windows       ] baseline          itemWidth=400  textRect=(0,3 194x18)  textWidth=194  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=206
+
+[breeze        ] baseline/noWidget itemWidth=150  textRect=(0,4 150x18)  textWidth=150  advance=188  tMargin=3  natural=194  drawn= 144  slack= -44  elides=YES  diff=0
+[breeze        ] baseline          itemWidth=150  textRect=(0,3 150x18)  textWidth=150  advance=188  tMargin=3  natural=194  drawn= 144  slack= -44  elides=YES  diff=0
+[Fusion        ] baseline/noWidget itemWidth=150  textRect=(0,3 150x18)  textWidth=150  advance=188  tMargin=3  natural=194  drawn= 144  slack= -44  elides=YES  diff=0
+[Fusion        ] baseline          itemWidth=150  textRect=(0,3 150x18)  textWidth=150  advance=188  tMargin=3  natural=194  drawn= 144  slack= -44  elides=YES  diff=0
+[Windows       ] baseline/noWidget itemWidth=150  textRect=(0,3 150x18)  textWidth=150  advance=188  tMargin=3  natural=194  drawn= 144  slack= -44  elides=YES  diff=0
+[Windows       ] baseline          itemWidth=150  textRect=(0,3 150x18)  textWidth=150  advance=188  tMargin=3  natural=194  drawn= 144  slack= -44  elides=YES  diff=0
+
+[breeze        ] baseline/noWidget itemWidth= 80  textRect=(0,4 80x18)  textWidth= 80  advance=188  tMargin=3  natural=194  drawn=  74  slack=-114  elides=YES  diff=0
+[breeze        ] baseline          itemWidth= 80  textRect=(0,3 80x18)  textWidth= 80  advance=188  tMargin=3  natural=194  drawn=  74  slack=-114  elides=YES  diff=0
+[Fusion        ] baseline/noWidget itemWidth= 80  textRect=(0,3 80x18)  textWidth= 80  advance=188  tMargin=3  natural=194  drawn=  74  slack=-114  elides=YES  diff=0
+[Fusion        ] baseline          itemWidth= 80  textRect=(0,3 80x18)  textWidth= 80  advance=188  tMargin=3  natural=194  drawn=  74  slack=-114  elides=YES  diff=0
+[Windows       ] baseline/noWidget itemWidth= 80  textRect=(0,3 80x18)  textWidth= 80  advance=188  tMargin=3  natural=194  drawn=  74  slack=-114  elides=YES  diff=0
+[Windows       ] baseline          itemWidth= 80  textRect=(0,3 80x18)  textWidth= 80  advance=188  tMargin=3  natural=194  drawn=  74  slack=-114  elides=YES  diff=0
+
+Cross-check: the */noWidget rows at 150 and 80 must match probe/qt5-style-elide-test-v2's
+output exactly, since that construction is what v2 uses. The rows with opt.widget set
+are new measurements and are the ones that describe a real view.

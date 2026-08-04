@@ -2,6 +2,42 @@
 
 *Part of the evidence set for KDE bug [523118](https://bugs.kde.org/show_bug.cgi?id=523118) — see the [repository overview](../README.md) for the full set.*
 
+> ## Read this first — the forward-looking conclusion is withdrawn
+>
+> **Withdrawn 08/02/2026.** This document predicts, from source reading, that
+> KeePassXC's Qt6 port will show the same label truncation as 2.7.x once it
+> ships. **That prediction was tested and it did not hold.** The port was built
+> from branch `feature/qt-feature` at commit `fabfba2c` and run against
+> unpatched `plasma-breeze-6.7.3-1.fc43.1`: every sidebar label renders in full.
+>
+> The call-path analysis below is unaffected and was confirmed — the Qt6 port
+> does reach `subElementRect(SE_ItemViewItemText)` through Breeze, exactly as
+> traced here. What did not follow is the *visible outcome*, because the
+> prediction assumed Qt 6 lays item text out the way Qt 5.15 does. It does not:
+> Qt 5.15 clamps the item text rect to the string's natural width, leaving no
+> slack for the inset to come out of, and Qt 6 removed that clamp. Measured in
+> the same 96px sidebar layout on unpatched Breeze:
+>
+> ```
+> qt5  Breeze  8/8 labels truncated     qt5  Fusion  6/8
+> qt6  Breeze  6/8 labels truncated     qt6  Fusion  6/8   <- no Breeze-specific difference
+> ```
+>
+> Sharing a call path is necessary for exposure, not sufficient for a visible
+> symptom. That is the correction, and it is the reason this document's
+> "Impact Assessment" and "Suggestion" sections carry inline corrections below.
+>
+> That branch is under active development, so this result describes the commit
+> named above and nothing else. Screenshots and the full statement of the
+> retraction are in the repository overview under
+> [Qt6 Scope](../README.md#qt6-scope).
+
+> **Partially superseded — see [Update 08/01/2026](#update-08012026) at the end
+> of this document.** The 8px figure below describes an *unframed* item view.
+> Framed views — which is every view in every application examined here — lose
+> **6px**. The finding is otherwise unchanged, and the original text is kept as
+> written.
+
 > **Verification note**: the call chain documented below was verified against
 > `CategoryListWidget.cpp` as shipped in the pristine
 > `keepassxc-2.7.12-src.tar.xz` tarball — the same source compiled into
@@ -14,7 +50,7 @@
 > An app-side change to KeePassXC's own text painting — blanking `opt.text`
 > and drawing the label directly with `QPainter::drawText()` — was tried
 > early in this investigation and decided against, on the grounds that the
-> defect is in the style and the fix belongs there. Nothing in this repository
+> regression is in the style and the fix belongs there. Nothing in this repository
 > depends on that attempt, and the screenshots here were taken against the
 > unpatched release build. The point of the caution is only that a modified
 > `CategoryListWidget.cpp` will not reproduce the call chain described below.
@@ -192,6 +228,13 @@ in effect (see the `git diff` in the Summary).
 | Does the widget compute its own text rect, bypassing the style? | No — text painting is delegated to the style via `drawControl` |
 | Would fixing `plasma-breeze` also fix KeePassXC 2.8.x? | Yes — same code path, same fix |
 
+> **Correction, 08/02/2026.** The first three rows were confirmed by building
+> the port; they describe the call path and they hold. The fourth row is
+> correct only in the narrow sense that a Breeze fix covers this code path —
+> **it should not be read as saying 2.8.x currently truncates and needs
+> fixing.** As built at `fabfba2c`, it does not. See the withdrawal at the top
+> of this document.
+
 ---
 
 ## Suggestion
@@ -202,7 +245,71 @@ applies to `kstyle/breezestyle.cpp` in `plasma-breeze`. Because both `breeze5.so
 for both Qt5 and Qt6 application code simultaneously. No changes are needed in
 KeePassXC itself.
 
+> **Note, 08/02/2026 — the patch named above is not the proposed change.**
+> Patch 1 was a hypothesis test. The proposed change is
+> [`patches/0004-width-guarded-itemviewitem-text-inset-no-exclusions.patch`](../patches/0004-width-guarded-itemviewitem-text-inset-no-exclusions.patch),
+> which resolves the same truncation while keeping the clearance `aba0f922b`
+> was added to provide. The point that survives unchanged is the one about
+> shared compilation: both `breeze5.so` and `breeze6.so` are built from the
+> same source, so any fix there covers both.
+
 If the `plasma-breeze` patch is merged before KeePassXC 2.8.x ships, users running
 KDE with a fixed Breeze will not encounter label elision in either release. If
 KeePassXC 2.8.x ships first against an unpatched Breeze, the entry edit dialog
 sidebar will exhibit the same elision visible today in 2.7.x.
+
+> **Correction, 08/02/2026 — the final sentence above is withdrawn.** The
+> paragraph is retained so the correction is visible. The Qt6 port was built
+> (`feature/qt-feature`, `fabfba2c`) and its sidebar renders in full on
+> unpatched Breeze; on Qt 6 the two styles agree. The reasoning was a
+> source-level inference that assumed Qt 6 lays item text out as Qt 5.15 does,
+> and Qt 6 removed the natural-width clamp that makes the inset bite at any
+> width. See the withdrawal at the top of this document.
+>
+> The rest of the paragraph stands: 2.7.x is affected today, and a Breeze fix
+> resolves it without any change to KeePassXC.
+>
+> **This document should not be cited as evidence that KeePassXC 2.8.x is
+> affected.** The application demonstrating the regression in this repository
+> is SMPlayer, whose Preferences sidebar has no custom item delegate at all and
+> whose style dropdown makes the style the only variable — see
+> [`smplayer-source-analysis.md`](smplayer-source-analysis.md).
+
+
+---
+
+## Update 08/01/2026
+
+A second round of measurement, described in [`test-plan.md`](test-plan.md),
+refined the size of the effect and identified two mechanisms this document
+predates. Nothing here is retracted; the numbers are decomposed.
+
+**The narrowing is 6px in a framed view, not 8px.**
+`Helper::itemViewItemMargins()` reduces its left and right margins from 2px to
+1px once it detects the view's `QFrame::StyledPanel`, making the inset
+`1 + ItemView_ItemPaddingWidth` = 3px per side. The original probes measured the
+unframed case because `QStyleOption::initFrom()` does not populate
+`QStyleOptionViewItem::widget`, so Breeze's frame check never fired. Probe v3
+reports both cases side by side, reproducing the 8px figures below as its
+`*/noWidget` rows.
+
+**A live view shows 8px less text than Fusion, but only 6px of it is this code
+path.** The remaining 2px is Breeze's `PM_DefaultFrameWidth` returning
+`Metrics::Frame_FrameWidth` (2) for a scroll area in a spaced multi-item layout
+where Fusion returns 1 — a deliberate difference in frame thickness, unrelated
+to text layout.
+
+**Qt removes the padding a second time.**
+`QCommonStylePrivate::viewItemDrawText()` removes `PM_FocusFrameHMargin + 1` from
+each side of whatever `subElementRect()` returned, immediately before eliding.
+The width the text is laid out in is `textWidth - 2 * textMargin`. On Qt 5.15,
+where `viewItemLayout()` clamps the rect to the string's natural width whenever
+`showDecorationSelected` is false — which is what Breeze's style hint reports —
+this leaves every label short by exactly `2 * textMargin` at *any* view width.
+
+See the [repository overview](../README.md) for the current suggested patch.
+
+**Scope note.** This document analyses KeePassXC's Qt6 branch at source level and
+concludes the exposure is structurally identical. That remains a source-level
+inference: the Qt6 port was not built or run for these measurements, and no
+claim about observed behaviour on 2.8.x is made here.

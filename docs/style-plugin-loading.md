@@ -61,7 +61,7 @@ when the user (or a packager) changes the style to Breeze does the elision
 appear.
 
 This is also why SMPlayer was chosen as a control: switching between Fusion
-and Breeze in the same running process isolates the defect to the style
+and Breeze in the same running process isolates the behaviour to the style
 plugin, not the application code.
 
 ## KeePassXC: Why It Always Shows the Bug on KDE

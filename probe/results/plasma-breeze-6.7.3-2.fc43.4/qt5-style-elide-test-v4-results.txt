@@ -1,0 +1,105 @@
+========================================================
+  Qt/Breeze clean-launch wrapper
+  2026-08-01 01:54:14
+========================================================
+
+  Binary       : /home/allen/Workspace/breeze-itemview-text-elision/probe/qt5-style-elide-test-v4
+  plasma-breeze: plasma-breeze-6.7.3-2.fc43.4.x86_64
+  breeze-qt5   : plasma-breeze-qt5-6.7.3-2.fc43.4.x86_64
+  breeze-qt6   : plasma-breeze-qt6-6.7.3-2.fc43.4.x86_64
+
+--- style / theme / platform vars (clearing) ---
+  KDEDIRS                                    was: /usr  → unset
+  QT_SCALE_FACTOR                            was: 1  → unset
+  QT_ENABLE_HIGHDPI_SCALING                  was: 0  → unset
+  GTK2_RC_FILES                              was: /home/allen/.gtkrc-2.0-kde4  → unset
+
+--- session context (kept as-is) ---
+  QT_QPA_PLATFORMTHEME                       (unset)
+  XDG_CURRENT_DESKTOP                        KDE
+  KDE_FULL_SESSION                           true
+  KDE_SESSION_VERSION                        6
+  DISPLAY                                    :0
+  WAYLAND_DISPLAY                            (unset)
+  XAUTHORITY                                 /tmp/xauth_qWSlCL
+  XDG_CONFIG_HOME                            (unset)
+  XDG_DATA_HOME                              (unset)
+
+--- exec: /home/allen/Workspace/breeze-itemview-text-elision/probe/qt5-style-elide-test-v4  ---
+
+Qt version: 5.15.18
+Active style: breeze
+
+=== SH_ItemView_ShowDecorationSelected, as answered by each loaded style ===
+This is the value QAbstractItemView::viewOptions() copies into
+QStyleOptionViewItem::showDecorationSelected for a real application.
+
+[breeze        ] SH_ItemView_ShowDecorationSelected = 0  (text rect clamped to natural text size)
+[Fusion        ] SH_ItemView_ShowDecorationSelected = 1  (text rect takes all remaining width)
+[Windows       ] SH_ItemView_ShowDecorationSelected = 1  (text rect takes all remaining width)
+
+=== SE_ItemViewItemText rect probe v4 (Qt5, showDecorationSelected isolated) ===
+advance = fontMetrics.horizontalAdvance(text)  width of the glyphs themselves
+tMargin = pixelMetric(PM_FocusFrameHMargin) + 1  per-side padding QCommonStyle reserves
+natural = advance + 2*tMargin                 what the clamped branch bounds the rect to
+drawn   = textWidth - 2*tMargin               viewItemDrawText() removes tMargin from
+                                              each side again before eliding
+slack   = drawn - advance                     negative = cannot fit; delegate elides
+elides  = elidedText(text, ElideRight, drawn) != text
+diff    = itemWidth - textWidth               regime-dependent; see v3's note
+
+[breeze        ] showDecoSel=false itemWidth=400  textRect=(0,3 194x18)  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=206
+[breeze        ] showDecoSel=true  itemWidth=400  textRect=(3,0 394x24)  advance=188  tMargin=3  natural=194  drawn= 388  slack= 200  elides=no   diff=6
+[Fusion        ] showDecoSel=false itemWidth=400  textRect=(0,3 194x18)  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=206
+[Fusion        ] showDecoSel=true  itemWidth=400  textRect=(0,0 400x24)  advance=188  tMargin=3  natural=194  drawn= 394  slack= 206  elides=no   diff=0
+[Windows       ] showDecoSel=false itemWidth=400  textRect=(0,3 194x18)  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=206
+[Windows       ] showDecoSel=true  itemWidth=400  textRect=(0,0 400x24)  advance=188  tMargin=3  natural=194  drawn= 394  slack= 206  elides=no   diff=0
+
+[breeze        ] showDecoSel=false itemWidth=300  textRect=(0,3 194x18)  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=106
+[breeze        ] showDecoSel=true  itemWidth=300  textRect=(3,0 294x24)  advance=188  tMargin=3  natural=194  drawn= 288  slack= 100  elides=no   diff=6
+[Fusion        ] showDecoSel=false itemWidth=300  textRect=(0,3 194x18)  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=106
+[Fusion        ] showDecoSel=true  itemWidth=300  textRect=(0,0 300x24)  advance=188  tMargin=3  natural=194  drawn= 294  slack= 106  elides=no   diff=0
+[Windows       ] showDecoSel=false itemWidth=300  textRect=(0,3 194x18)  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=106
+[Windows       ] showDecoSel=true  itemWidth=300  textRect=(0,0 300x24)  advance=188  tMargin=3  natural=194  drawn= 294  slack= 106  elides=no   diff=0
+
+[breeze        ] showDecoSel=false itemWidth=220  textRect=(0,3 194x18)  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=26
+[breeze        ] showDecoSel=true  itemWidth=220  textRect=(3,0 214x24)  advance=188  tMargin=3  natural=194  drawn= 208  slack=  20  elides=no   diff=6
+[Fusion        ] showDecoSel=false itemWidth=220  textRect=(0,3 194x18)  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=26
+[Fusion        ] showDecoSel=true  itemWidth=220  textRect=(0,0 220x24)  advance=188  tMargin=3  natural=194  drawn= 214  slack=  26  elides=no   diff=0
+[Windows       ] showDecoSel=false itemWidth=220  textRect=(0,3 194x18)  advance=188  tMargin=3  natural=194  drawn= 188  slack=   0  elides=no   diff=26
+[Windows       ] showDecoSel=true  itemWidth=220  textRect=(0,0 220x24)  advance=188  tMargin=3  natural=194  drawn= 214  slack=  26  elides=no   diff=0
+
+[breeze        ] showDecoSel=false itemWidth=150  textRect=(0,3 150x18)  advance=188  tMargin=3  natural=194  drawn= 144  slack= -44  elides=YES  diff=0
+[breeze        ] showDecoSel=true  itemWidth=150  textRect=(0,0 150x24)  advance=188  tMargin=3  natural=194  drawn= 144  slack= -44  elides=YES  diff=0
+[Fusion        ] showDecoSel=false itemWidth=150  textRect=(0,3 150x18)  advance=188  tMargin=3  natural=194  drawn= 144  slack= -44  elides=YES  diff=0
+[Fusion        ] showDecoSel=true  itemWidth=150  textRect=(0,0 150x24)  advance=188  tMargin=3  natural=194  drawn= 144  slack= -44  elides=YES  diff=0
+[Windows       ] showDecoSel=false itemWidth=150  textRect=(0,3 150x18)  advance=188  tMargin=3  natural=194  drawn= 144  slack= -44  elides=YES  diff=0
+[Windows       ] showDecoSel=true  itemWidth=150  textRect=(0,0 150x24)  advance=188  tMargin=3  natural=194  drawn= 144  slack= -44  elides=YES  diff=0
+
+[breeze        ] showDecoSel=false itemWidth=120  textRect=(0,3 120x18)  advance=188  tMargin=3  natural=194  drawn= 114  slack= -74  elides=YES  diff=0
+[breeze        ] showDecoSel=true  itemWidth=120  textRect=(0,0 120x24)  advance=188  tMargin=3  natural=194  drawn= 114  slack= -74  elides=YES  diff=0
+[Fusion        ] showDecoSel=false itemWidth=120  textRect=(0,3 120x18)  advance=188  tMargin=3  natural=194  drawn= 114  slack= -74  elides=YES  diff=0
+[Fusion        ] showDecoSel=true  itemWidth=120  textRect=(0,0 120x24)  advance=188  tMargin=3  natural=194  drawn= 114  slack= -74  elides=YES  diff=0
+[Windows       ] showDecoSel=false itemWidth=120  textRect=(0,3 120x18)  advance=188  tMargin=3  natural=194  drawn= 114  slack= -74  elides=YES  diff=0
+[Windows       ] showDecoSel=true  itemWidth=120  textRect=(0,0 120x24)  advance=188  tMargin=3  natural=194  drawn= 114  slack= -74  elides=YES  diff=0
+
+[breeze        ] showDecoSel=false itemWidth=100  textRect=(0,3 100x18)  advance=188  tMargin=3  natural=194  drawn=  94  slack= -94  elides=YES  diff=0
+[breeze        ] showDecoSel=true  itemWidth=100  textRect=(0,0 100x24)  advance=188  tMargin=3  natural=194  drawn=  94  slack= -94  elides=YES  diff=0
+[Fusion        ] showDecoSel=false itemWidth=100  textRect=(0,3 100x18)  advance=188  tMargin=3  natural=194  drawn=  94  slack= -94  elides=YES  diff=0
+[Fusion        ] showDecoSel=true  itemWidth=100  textRect=(0,0 100x24)  advance=188  tMargin=3  natural=194  drawn=  94  slack= -94  elides=YES  diff=0
+[Windows       ] showDecoSel=false itemWidth=100  textRect=(0,3 100x18)  advance=188  tMargin=3  natural=194  drawn=  94  slack= -94  elides=YES  diff=0
+[Windows       ] showDecoSel=true  itemWidth=100  textRect=(0,0 100x24)  advance=188  tMargin=3  natural=194  drawn=  94  slack= -94  elides=YES  diff=0
+
+[breeze        ] showDecoSel=false itemWidth= 80  textRect=(0,3 80x18)  advance=188  tMargin=3  natural=194  drawn=  74  slack=-114  elides=YES  diff=0
+[breeze        ] showDecoSel=true  itemWidth= 80  textRect=(0,0 80x24)  advance=188  tMargin=3  natural=194  drawn=  74  slack=-114  elides=YES  diff=0
+[Fusion        ] showDecoSel=false itemWidth= 80  textRect=(0,3 80x18)  advance=188  tMargin=3  natural=194  drawn=  74  slack=-114  elides=YES  diff=0
+[Fusion        ] showDecoSel=true  itemWidth= 80  textRect=(0,0 80x24)  advance=188  tMargin=3  natural=194  drawn=  74  slack=-114  elides=YES  diff=0
+[Windows       ] showDecoSel=false itemWidth= 80  textRect=(0,3 80x18)  advance=188  tMargin=3  natural=194  drawn=  74  slack=-114  elides=YES  diff=0
+[Windows       ] showDecoSel=true  itemWidth= 80  textRect=(0,0 80x24)  advance=188  tMargin=3  natural=194  drawn=  74  slack=-114  elides=YES  diff=0
+
+Expected, if the reading of viewItemLayout() above is correct:
+  - showDecoSel=false rows reproduce v3 exactly.
+  - showDecoSel=true rows show textRect tracking itemWidth.
+  - The breeze-minus-Fusion difference in textWidth stays 8 in both,
+    since Breeze's inset is applied after this branch and independently
+    of it.

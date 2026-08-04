@@ -2,6 +2,12 @@
 
 *Part of the evidence set for KDE bug [523118](https://bugs.kde.org/show_bug.cgi?id=523118) — see the [repository overview](../README.md) for the full set.*
 
+> **Partially superseded — see [Update 08/01/2026](#update-08012026) at the end
+> of this document.** The 8px figure below describes an *unframed* item view.
+> Framed views — which is every view in every application examined here — lose
+> **6px**. The finding is otherwise unchanged, and the original text is kept as
+> written.
+
 Both diagrams below trace a real paint call, from the item view's paint
 event down to the single function where the bug lives
 (`Style::subElementRect(SE_ItemViewItemText)` in `kstyle/breezestyle.cpp`,
@@ -37,7 +43,7 @@ sequenceDiagram
     Proxy->>Breeze: QProxyStyle::drawControl() forwards to<br/>QApplication::style() → Breeze
     Breeze->>Common: drawControl(CE_ItemViewItem)<br/>via ParentStyleClass
     Common->>Breeze: subElementRect(SE_ItemViewItemText, opt)
-    Note over Breeze: BUG: rect.setRight(-2px margin -2px padding)<br/>rect.setLeft(+2px margin +2px padding)<br/>→ 8px stolen from text width, unconditionally
+    Note over Breeze: aba0f922b: rect.setRight(-margin -padding)<br/>rect.setLeft(+margin +padding)<br/>→ inset applied unconditionally (6px framed, 8px unframed)
     Breeze-->>Common: narrowed textRect
     Common->>Common: drawItemText(painter, textRect,<br/>..., opt.text)
     Note over Common: Qt elides opt.text to fit the<br/>narrowed rect → "Properties" → "Prope..."
@@ -112,3 +118,37 @@ which concrete `QStyle` instance answers that one call — confirmed directly
 by the Fusion-vs-Breeze control comparison in
 [`bug-analysis.md`](bug-analysis.md) and proven independent of any
 application in [`se-itemviewitemtext-proof.md`](se-itemviewitemtext-proof.md).
+
+
+---
+
+## Update 08/01/2026
+
+A second round of measurement, described in [`test-plan.md`](test-plan.md),
+refined the size of the effect and identified two mechanisms this document
+predates. Nothing here is retracted; the numbers are decomposed.
+
+**The narrowing is 6px in a framed view, not 8px.**
+`Helper::itemViewItemMargins()` reduces its left and right margins from 2px to
+1px once it detects the view's `QFrame::StyledPanel`, making the inset
+`1 + ItemView_ItemPaddingWidth` = 3px per side. The original probes measured the
+unframed case because `QStyleOption::initFrom()` does not populate
+`QStyleOptionViewItem::widget`, so Breeze's frame check never fired. Probe v3
+reports both cases side by side, reproducing the 8px figures below as its
+`*/noWidget` rows.
+
+**A live view shows 8px less text than Fusion, but only 6px of it is this code
+path.** The remaining 2px is Breeze's `PM_DefaultFrameWidth` returning
+`Metrics::Frame_FrameWidth` (2) for a scroll area in a spaced multi-item layout
+where Fusion returns 1 — a deliberate difference in frame thickness, unrelated
+to text layout.
+
+**Qt removes the padding a second time.**
+`QCommonStylePrivate::viewItemDrawText()` removes `PM_FocusFrameHMargin + 1` from
+each side of whatever `subElementRect()` returned, immediately before eliding.
+The width the text is laid out in is `textWidth - 2 * textMargin`. On Qt 5.15,
+where `viewItemLayout()` clamps the rect to the string's natural width whenever
+`showDecorationSelected` is false — which is what Breeze's style hint reports —
+this leaves every label short by exactly `2 * textMargin` at *any* view width.
+
+See the [repository overview](../README.md) for the current suggested patch.

@@ -208,6 +208,13 @@ implementation gets called, because nothing in SMPlayer's path intercepts it.
 
 Same conclusion as [`keepassxc-qt6-analysis.md`](keepassxc-qt6-analysis.md): no
 change is needed in SMPlayer. The [`patches/0001-remove-horizontal-text-rect-narrowing.patch`](../patches/0001-remove-horizontal-text-rect-narrowing.patch)
-fix to `plasma-breeze`'s `kstyle/breezestyle.cpp` resolves the defect at its
+fix to `plasma-breeze`'s `kstyle/breezestyle.cpp` resolves the regression at its
 source; both `breeze5.so` and `breeze6.so` are compiled from that file, so
 the fix covers SMPlayer's Qt5 build without any SMPlayer-side action.
+
+> **Note, 08/02/2026 — the patch named above is not the proposed change.**
+> Patch 1 was a hypothesis test. The proposed change is
+> [`patches/0004-width-guarded-itemviewitem-text-inset-no-exclusions.patch`](../patches/0004-width-guarded-itemviewitem-text-inset-no-exclusions.patch),
+> which resolves the same truncation while keeping the clearance `aba0f922b`
+> was added to provide. The conclusion of this section is unchanged: the fix
+> belongs in `plasma-breeze`, and no SMPlayer-side action is needed.

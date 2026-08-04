@@ -2,6 +2,12 @@
 
 *Part of the evidence set for KDE bug [523118](https://bugs.kde.org/show_bug.cgi?id=523118) — see the [repository overview](../README.md) for the full set.*
 
+> **Partially superseded — see [Update 08/01/2026](#update-08012026) at the end
+> of this document.** The 8px figure below describes an *unframed* item view.
+> Framed views — which is every view in every application examined here — lose
+> **6px**. The finding is otherwise unchanged, and the original text is kept as
+> written.
+
 ## Summary
 
 A commit to `plasma/breeze` in February 2026 introduced an unconditional
@@ -12,6 +18,30 @@ application using the Breeze style with narrow or medium-width columns.
 
 Fusion and Windows styles are not affected. The defect is isolated to
 `kstyle/breezestyle.cpp` in `plasma-breeze`.
+
+> **Correction, 08/02/2026 — two figures above are superseded by later
+> measurement. The summary is retained so the correction is visible.**
+>
+> - **3px per side, not 4 — 6px in total, not 8.** In a framed item view, and
+>   every view examined here is framed, `Helper::itemViewItemMargins()` reduces
+>   its margins once it detects the view's `QFrame::StyledPanel`. The 8px figure
+>   describes an *unframed* view, which is what the original probes measured;
+>   see [Update 08/01/2026](#update-08012026) below.
+> - **"Any Qt5 or Qt6 application" overstates the Qt6 case.** On Qt 5.15 the
+>   inset causes truncation even in views with ample width to spare, because of
+>   an interaction with Qt's own natural-width clamp. Qt 6 removed that clamp,
+>   so there the inset generally becomes visible only near the available-width
+>   boundary.
+>
+> Separately: a live view shows 8px less text under Breeze than under Fusion,
+> but only 6px of that belongs to this subelement. The remaining 2px is Breeze's
+> `PM_DefaultFrameWidth` returning a thicker frame than Fusion's — a deliberate
+> difference, unrelated to text layout, and unaffected by any patch here.
+> Quoting the 8px total as though it were the inset overstates what
+> `SE_ItemViewItemText` does.
+>
+> The located cause is unchanged, and so is the finding that Fusion and Windows
+> do not exhibit the difference under identical conditions.
 
 ---
 
@@ -143,7 +173,7 @@ size hint inflation — see note below).
 
 **Fusion style control**: the same SMPlayer binary with Style=Fusion shows
 zero elision. Switching styles within the running app is the clearest
-isolated demonstration that the defect is in Breeze, not SMPlayer.
+isolated demonstration that the behaviour originates in Breeze, not SMPlayer.
 
 Screenshots: [`screenshots/01-stock-6.7.3-1.fc43.1/smplayer-1.png`](../screenshots/01-stock-6.7.3-1.fc43.1/smplayer-1.png),
 [`screenshots/02-patch1-6.7.3-1.fc43.2/smplayer-1.png`](../screenshots/02-patch1-6.7.3-1.fc43.2/smplayer-1.png),
@@ -200,6 +230,15 @@ is painted with its own inset via a separate code path and is unaffected.
 
 Full patch: [`patches/0001-remove-horizontal-text-rect-narrowing.patch`](../patches/0001-remove-horizontal-text-rect-narrowing.patch)
 
+> **Note, 08/02/2026.** Patch 1 is a hypothesis test, not the proposed change.
+> It established that these two lines carry the Breeze-specific contribution,
+> and it does so by removing the clearance `aba0f922b` was added to provide.
+> The proposed change is
+> [`patches/0004-width-guarded-itemviewitem-text-inset-no-exclusions.patch`](../patches/0004-width-guarded-itemviewitem-text-inset-no-exclusions.patch),
+> which keeps that clearance where the item has width to spare — see
+> [Patches](../README.md#patches) in the repository overview. This document
+> predates Patches 3 and 4.
+
 ### Patch 2 (considered, insufficient)
 
 Retain `itemViewItemMargins` (2px/side) but remove `ItemView_ItemPaddingWidth`
@@ -232,3 +271,37 @@ not addressed by either patch here.
 - `plasma-breeze` versions tested: 6.7.3-1.fc43.1 (stock), 6.7.3-1.fc43.2 (Patch 1), 6.7.3-1.fc43.3 (Patch 2)
 - All applications launched via [`probe/run-clean.sh`](../probe/run-clean.sh) to clear style-override
   environment variables and document session context
+
+
+---
+
+## Update 08/01/2026
+
+A second round of measurement, described in [`test-plan.md`](test-plan.md),
+refined the size of the effect and identified two mechanisms this document
+predates. Nothing here is retracted; the numbers are decomposed.
+
+**The narrowing is 6px in a framed view, not 8px.**
+`Helper::itemViewItemMargins()` reduces its left and right margins from 2px to
+1px once it detects the view's `QFrame::StyledPanel`, making the inset
+`1 + ItemView_ItemPaddingWidth` = 3px per side. The original probes measured the
+unframed case because `QStyleOption::initFrom()` does not populate
+`QStyleOptionViewItem::widget`, so Breeze's frame check never fired. Probe v3
+reports both cases side by side, reproducing the 8px figures below as its
+`*/noWidget` rows.
+
+**A live view shows 8px less text than Fusion, but only 6px of it is this code
+path.** The remaining 2px is Breeze's `PM_DefaultFrameWidth` returning
+`Metrics::Frame_FrameWidth` (2) for a scroll area in a spaced multi-item layout
+where Fusion returns 1 — a deliberate difference in frame thickness, unrelated
+to text layout.
+
+**Qt removes the padding a second time.**
+`QCommonStylePrivate::viewItemDrawText()` removes `PM_FocusFrameHMargin + 1` from
+each side of whatever `subElementRect()` returned, immediately before eliding.
+The width the text is laid out in is `textWidth - 2 * textMargin`. On Qt 5.15,
+where `viewItemLayout()` clamps the rect to the string's natural width whenever
+`showDecorationSelected` is false — which is what Breeze's style hint reports —
+this leaves every label short by exactly `2 * textMargin` at *any* view width.
+
+See the [repository overview](../README.md) for the current suggested patch.

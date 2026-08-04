@@ -1,0 +1,94 @@
+From aba0f922b in plasma/breeze (Plasma/6.7 branch)
+Subject: [PATCH 3] SE_ItemViewItemText: take the horizontal inset only from
+ space the text does not need
+
+Third alternative, alongside patches 0001 and 0002. Neither of those is
+conditional: 0001 removes the inset outright, 0002 removes half of it. This one
+keeps the inset wherever the item is wide enough to spare it, and yields it only
+where taking it would elide text that would otherwise have fitted.
+
+Applies to Qt5 and Qt6 alike. No version conditional is introduced: breeze5.so
+and breeze6.so are built from one translation unit, and the guard is a function
+of available width, not of Qt major version.
+
+Why the comparison is not against rect.width()
+----------------------------------------------
+QCommonStylePrivate::viewItemDrawText() removes PM_FocusFrameHMargin + 1 from
+each side of whatever subElementRect() returned, immediately before eliding:
+
+    QRect textRect = rect.adjusted(textMargin, 0, -textMargin, 0);
+
+A guard that compared the string against rect.width() would therefore conclude
+that the text fits, keep the full inset, and still leave the label short by
+2 * textMargin. The value is obtained through proxy()->pixelMetric(), which is
+the same source QCommonStyle uses, so the two agree by construction rather than
+by coincidence.
+
+Behaviour, measured (plasma-breeze-6.7.3-2.fc43.1, Qt 5.15.18 / 6.10.3)
+----------------------------------------------------------------------
+  parent rect   available   required   inset applied   result
+  Qt6, 400px          394        188         6 (full)   unchanged from stock
+  Qt6, 200px          194        188         6 (full)   fits; no elision
+  Qt5, 400px          188        188         0          equivalent to patch 0001
+  Qt5, 150px          144        188         0          equivalent to patch 0001
+
+On Qt 5.15 the text rect arrives already clamped to the string's natural size,
+because QCommonStylePrivate::viewItemLayout() bounds it when
+showDecorationSelected is false, which is what Breeze's style hint reports.
+There is consequently never slack to preserve on Qt5 and the guard yields the
+whole inset, matching patch 0001. On Qt6 that clamp was removed, so the guard
+preserves the inset in every view wide enough not to need it.
+
+Excluded cases
+--------------
+  Qt::ElideNone            the text is clipped rather than elided; the guard
+                           would not prevent anything, so the inset is kept
+  WrapText                 horizontalAdvance() of the whole string does not
+                           describe wrapped text, so the inset is kept
+
+In both, and where the option carries no text, behaviour is identical to stock.
+
+Metrics at Plasma/6.7.3, for reference:
+  ItemView_ItemMarginLeft/Right  2px each, reduced to 1px each by
+                                 Helper::itemViewItemMargins() when the view is
+                                 a QFrame::StyledPanel, which item views are
+  ItemView_ItemPaddingWidth      2px
+  => 3px per side in a framed view, 6px total; 4px per side unframed, 8px total
+
+--- a/kstyle/breezestyle.cpp
++++ b/kstyle/breezestyle.cpp
+@@ -1062,8 +1062,32 @@
+         QRect rect = ParentStyleClass::subElementRect(element, option, widget);
+         if (viewItem) {
+             const QMargins margins = _helper->itemViewItemMargins(viewItem);
+-            rect.setRight(rect.right() - margins.right() - Metrics::ItemView_ItemPaddingWidth);
+-            rect.setLeft(rect.left() + margins.left() + Metrics::ItemView_ItemPaddingWidth);
++            const int leftInset = margins.left() + Metrics::ItemView_ItemPaddingWidth;
++            const int rightInset = margins.right() + Metrics::ItemView_ItemPaddingWidth;
++
++            // Take the inset only out of space the text does not need. Where the
++            // item is wide enough to spare it, the full inset is applied exactly
++            // as before; where it is not, the text keeps the width it needs
++            // rather than being elided by the inset itself.
++            //
++            // The comparison must be made against the width the text is really
++            // laid out in, not against rect.width(): QCommonStylePrivate::
++            // viewItemDrawText() removes PM_FocusFrameHMargin + 1 from each side
++            // again, after this function has returned.
++            int inset = leftInset + rightInset;
++            if (viewItem->textElideMode != Qt::ElideNone && !(viewItem->features & QStyleOptionViewItem::WrapText)) {
++                const int textMargin = proxy()->pixelMetric(PM_FocusFrameHMargin, option, widget) + 1;
++                const int available = rect.width() - 2 * textMargin;
++                const int required = viewItem->fontMetrics.horizontalAdvance(viewItem->text);
++                inset = qBound(0, available - required, inset);
++            }
++
++            // Split what remains in the original proportion, so a reduced inset
++            // keeps the text positioned as it would have been.
++            const int total = leftInset + rightInset;
++            const int right = total > 0 ? inset * rightInset / total : 0;
++            rect.setRight(rect.right() - right);
++            rect.setLeft(rect.left() + (inset - right));
+             rect.moveTop(rect.top() + margins.top() - margins.bottom());
+         }
+ 
